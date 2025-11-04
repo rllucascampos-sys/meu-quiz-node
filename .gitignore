@@ -1,0 +1,12 @@
+# Dependências do Node
+/node_modules
+
+# Arquivos de log e cache
+npm-debug.log*
+.DS_Store
+
+# Arquivos de dados (opcional, se quiser recomeçar do zero no Render)
+# Mas, como você usa para persistir dados, é melhor enviar para o Render.
+# Se você não quiser que o histórico seja salvo no GitHub, adicione:
+# data/usuarios.json
+# data/perguntas.json

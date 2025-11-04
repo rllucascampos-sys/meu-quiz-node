@@ -1,0 +1,12 @@
+
+[
+  {"id":1,"texto":"Quem foi o primeiro homem?","opcoes":["Adão","Noé","Abraão","Moisés"],"correta":"Adão","dificuldade":"facil"},
+  {"id":2,"texto":"Quem construiu a arca?","opcoes":["Moisés","Noé","Davi","Salomão"],"correta":"Noé","dificuldade":"facil"},
+  {"id":3,"texto":"Quantos dias Deus levou para criar o mundo?","opcoes":["5","6","7","8"],"correta":"6","dificuldade":"media"},
+  {"id":4,"texto":"Quem liderou os israelitas na saída do Egito?","opcoes":["Moisés","Jesus","Paulo","Pedro"],"correta":"Moisés","dificuldade":"media"},
+  {"id":5,"texto":"Qual era o nome original de Abraão?","opcoes":["Abrão","Avraham","Abram","Abel"],"correta":"Abrão","dificuldade":"dificil"},
+  {"id":6,"texto":"Qual profeta foi engolido por um grande peixe?","opcoes":["Jonas","Elias","Isaías","Jeremias"],"correta":"Jonas","dificuldade":"dificil"},
+  {"id":7,"texto":"Qual foi o primeiro milagre registrado de Jesus?","opcoes":["Transformar água em vinho","Curar um cego","Multiplicar pães","Andar sobre as águas"],"correta":"Transformar água em vinho","dificuldade":"facil"},
+  {"id":8,"texto":"Quem escreveu a maior parte das cartas do Novo Testamento?","opcoes":["Paulo","Pedro","João","Lucas"],"correta":"Paulo","dificuldade":"media"},
+  {"id":9,"texto":"Em que cidade Jesus nasceu?","opcoes":["Belém","Jerusalém","Nazare","Cafarnaum"],"correta":"Belém","dificuldade":"facil"}
+]

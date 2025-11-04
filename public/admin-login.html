@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>EB POINT - Acesso Admin</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <header>
+         <img src="eb_logo.png" alt="Logo EB Educação" class="logo">
+        <h1>Game Point</h1>
+        <p>Acesso restrito. Faça login para gerenciar o desafio.</p>
+    </header>
+
+    <main class="auth-form">
+        <h2>Acesso Administrador</h2>
+        
+        <div id="msg" class="message hidden"></div>
+
+        <form onsubmit="event.preventDefault(); adminLogin();">
+            <div class="input-group">
+                <label for="email">E-mail Admin</label>
+                <input id="email" placeholder="E-mail" value="admin@meuquiz.com" type="email">
+            </div>
+            
+            <div class="input-group">
+                <label for="senha">Senha</label>
+                <input id="senha" placeholder="Senha" value="admin123" type="password">
+            </div>
+
+            <button type="submit">Entrar no Painel</button>
+        </form>
+        
+        <p class="toggle-text">
+            <a href="login.html">Voltar para o Acesso Aluno</a>
+        </p>
+    </main>
+</div>
+
+<script>
+async function adminLogin() {
+  const msgEl = document.getElementById('msg');
+  msgEl.textContent = "";
+  msgEl.classList.add('hidden');
+  
+  const email = document.getElementById('email').value.trim();
+  const senha = document.getElementById('senha').value.trim();
+  
+  if (!email || !senha) { 
+      msgEl.textContent = "Preencha e-mail e senha."; 
+      msgEl.classList.remove('hidden', 'success');
+      msgEl.classList.add('error');
+      return; 
+  }
+
+  try {
+    const res = await fetch("/admin/login", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ email, senha })
+    });
+    const data = await res.json();
+    
+    if (!res.ok) throw new Error(data.message || "Acesso negado.");
+    
+    // Guarda no localStorage
+    localStorage.setItem("meuquiz_admin", JSON.stringify({ email, nome: data.nome }));
+    window.location.href = "admin.html";
+
+  } catch (e) {
+    msgEl.textContent = e.message;
+    msgEl.classList.remove('hidden', 'success');
+    msgEl.classList.add('error');
+  }
+}
+</script>
+</body>
+</html>

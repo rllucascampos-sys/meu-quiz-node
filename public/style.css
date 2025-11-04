@@ -1,0 +1,76 @@
+/* style.css - Estilo Geral e Tema */
+
+:root { --primary-color: #018efa; /* Azul EB */ --secondary-color: #ff9800; /* Laranja de Destaque / Moedas */ --background-color: #020145; --card-background: #ffffff;
+ --success-color: #4caf50;
+ --error-color: #ff0000; /* Corrigido para um vermelho padrão */ --text-color: #000000;
+ --shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ajustada */
+ --input-bg-color: #ffffff; /* Corrigido para branco */
+}
+
+* {
+ box-sizing: border-box;
+ margin: 0;
+ padding: 0;
+ font-family: 'Arial', sans-serif;
+}
+
+body {
+background-color: var(--background-color); 
+color: var(--text-color);
+line-height: 1.6; display: flex; 
+justify-content: center; 
+align-items: center; 
+min-height: 100vh; 
+overflow-x: hidden;
+}
+
+/* --- Login/Container --- */
+.container { width: 100%; max-width: 400px; background: var(--card-background);
+ border-radius: 50px;
+box-shadow: var(--shadow); padding: 5px; text-align: center;
+z-index: 10;
+
+}
+
+header { margin-bottom: 30px; }
+.logo { width: 150px; margin-bottom: 10px; }
+h1 { color: var(--primary-color); font-size: 2em; margin-bottom: 5px; }
+p { color: #555; } /* Estilo para o parágrafo de boas-vindas */
+
+
+/* Formulário */
+.input-group { text-align: left; margin-bottom: 20px; }
+.input-group label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--text-color); }
+.input-group input {
+ width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 1em; background-color: var(--input-bg-color);
+}
+.input-group input:focus { border-color: var(--primary-color); outline: none; }
+
+
+button {
+ width: 100%; padding: 15px; background-color: var(--primary-color); color: white; border: none; border-radius: 6px; font-size: 1.1em; font-weight: bold; cursor: pointer;
+ transition: background-color 0.3s ease; margin-top: 10px;
+}
+button:hover { background-color: #017ae0; } /* Ajuste de hover */
+
+
+.message { padding: 10px; margin-bottom: 20px; border-radius: 6px; font-weight: bold; text-align: center; }
+.message.success { background-color: #e8f5e9; color: var(--success-color); }
+/* Usando a cor de erro padrão */
+.message.error { background-color: #ffebee; color: var(--error-color); } 
+.hidden { display: none !important; }
+
+/* Texto de rodapé/toggle */
+.toggle-text { 
+    margin-top: 20px; 
+    font-size: 0.9em; 
+    color: #666;
+}
+.toggle-text a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: bold;
+}
+.toggle-text a:hover {
+    text-decoration: underline;
+}

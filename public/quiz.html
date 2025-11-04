@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<title>Quiz</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h2 id="nomeAluno">Olá</h2>
+      <div>EBcoins: <span id="ebcoins">0</span></div>
+    </div>
+    <div class="hall" id="hallDiv">
+      <h4>🏆 Hall da Fama</h4>
+      <div id="hall"></div>
+    </div>
+  </div>
+
+  <hr>
+  <div id="perguntasArea"></div>
+  <button id="btnEnviar" onclick="enviarRespostas()">Enviar respostas</button>
+  <p id="msg" style="color:green"></p>
+  <p><a href="login.html">Sair</a></p>
+</div>
+
+<script>
+const user = JSON.parse(localStorage.getItem("meuquiz_user") || "{}");
+if (!user.email) { alert("Faça login primeiro"); window.location.href = "login.html"; }
+
+document.getElementById("nomeAluno").innerText = user.nome || user.email;
+document.getElementById("ebcoins").innerText = user.ebcoins || 0;
+
+let perguntasAtuais = [];
+
+async function carregarHall() {
+  const res = await fetch(`/hall?email=${encodeURIComponent(user.email)}`);
+  const data = await res.json();
+  const hall = document.getElementById("hall");
+  hall.innerHTML = "";
+  if (data.top5 && data.top5.length) {
+    data.top5.forEach((p,i) => hall.innerHTML += `<div>${i+1}. ${p.nome} - ${p.ebcoins}</div>`);
+  } else hall.innerHTML = "<div>Sem dados ainda</div>";
+  if (data.meu) {
+    hall.innerHTML += `<hr><div>Sua posição: ${data.meu.posicao || "-"} • ${data.meu.ebcoins} EBcoins</div>`;
+  }
+}
+
+async function carregarPerguntas() {
+  const res = await fetch(`/perguntas/${encodeURIComponent(user.email)}`);
+  const data = await res.json();
+  const area = document.getElementById("perguntasArea");
+  area.innerHTML = "";
+  document.getElementById("msg").textContent = "";
+
+  if (!data.success) {
+    area.innerHTML = `<p>${data.message}</p>`;
+    document.getElementById("btnEnviar").style.display = "none";
+    return;
+  }
+
+  perguntasAtuais = data.perguntas || [];
+  if (!perguntasAtuais.length) { area.innerHTML = "<p>Sem perguntas disponíveis.</p>"; return; }
+  document.getElementById("btnEnviar").style.display = "inline-block";
+
+  perguntasAtuais.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "pergunta";
+    div.innerHTML = `<p><b>${p.texto}</b> <small>(${p.dificuldade})</small></p>`;
+    p.opcoes.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.innerText = opt;
+      btn.onclick = () => {
+        // marca a resposta visualmente
+        const siblings = div.querySelectorAll("button");
+        siblings.forEach(s => s.style.background = "");
+        btn.style.background = "#d0f0c0";
+        // guarda a resposta no objeto da pergunta
+        p.respostaSelecionada = opt;
+      };
+      div.appendChild(btn);
+    });
+    area.appendChild(div);
+  });
+}
+
+async function enviarRespostas() {
+  document.getElementById("msg").textContent = "Enviando...";
+  const respostas = perguntasAtuais
+    .filter(p => p.respostaSelecionada)
+    .map(p => ({ id: p.id, resposta: p.respostaSelecionada }));
+
+  if (!respostas.length) {
+    document.getElementById("msg").textContent = "Selecione pelo menos uma resposta.";
+    return;
+  }
+
+  try {
+    const res = await fetch("/responder", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ email: user.email, respostas })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Erro ao responder");
+    
+    document.getElementById("msg").textContent = `Respostas enviadas! Você ganhou ${data.ganhos} EBcoins!`;
+    document.getElementById("ebcoins").innerText = data.totalEbcoins;
+    
+    // Atualiza Hall e recarrega perguntas (para exibir a mensagem de "já respondeu")
+    carregarHall();
+    carregarPerguntas(); 
+  } catch (e) {
+    document.getElementById('msg').textContent = e.message;
+  }
+}
+
+// Inicializa
+carregarHall();
+carregarPerguntas();
+</script>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<title>Painel Admin</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h2 id="nomeAdmin">Painel Admin</h2>
+    <p><a href="admin-login.html">Sair</a></p>
+  </div>
+  <hr>
+
+  <h3>🗂️ Usuários</h3>
+  <button onclick="carregarUsuarios()">Recarregar Usuários</button>
+  <div id="usuariosArea"></div>
+  <hr>
+
+  <h3>➕ Criar Novo Usuário</h3>
+  <input id="nomeNovo" placeholder="Nome">
+  <input id="emailNovo" placeholder="E-mail">
+  <input id="senhaNova" placeholder="Senha" type="password">
+  <select id="tipoNovo">
+    <option value="aluno">Aluno</option>
+    <option value="admin">Admin</option>
+  </select>
+  <button onclick="criarUsuario()">Criar</button>
+  <p id="msgNovo" style="color:blue"></p>
+  <hr>
+
+  <h3>❓ CRUD Perguntas</h3>
+  <button onclick="carregarPerguntasAdmin()">Recarregar Perguntas</button>
+  <div id="perguntasAdminArea"></div>
+  <hr>
+
+  <h3>🔄 Reset Mensal</h3>
+  <p>Zera as EBcoins e o histórico de respostas de **todos** os usuários.</p>
+  <button onclick="resetDados()" style="background-color:red; color:white;">RESETAR TUDO</button>
+  <p id="msgReset" style="color:red"></p>
+
+</div>
+
+<script>
+const admin = JSON.parse(localStorage.getItem("meuquiz_admin") || "{}");
+if (!admin.email) { alert("Acesso restrito"); window.location.href = "admin-login.html"; }
+
+document.getElementById("nomeAdmin").innerText = `Olá, ${admin.nome} - Painel Admin`;
+
+// --- Funções de Usuários ---
+async function carregarUsuarios() {
+  const res = await fetch(`/admin/usuarios?adminEmail=${encodeURIComponent(admin.email)}`);
+  const users = await res.json();
+  const area = document.getElementById("usuariosArea");
+  area.innerHTML = "<h4>Lista de Usuários (Ranking)</h4>";
+  
+  // Ordena por EBcoins para ranking
+  users.sort((a,b) => (b.ebcoins || 0) - (a.ebcoins || 0));
+
+  if (users.length) {
+    area.innerHTML += `
+      <table>
+        <thead>
+          <tr><th>Pos.</th><th>Nome</th><th>E-mail</th><th>Tipo</th><th>EBcoins</th></tr>
+        </thead>
+        <tbody>
+          ${users.map((u, i) => `
+            <tr>
+              <td>${i + 1}</td>
+              <td>${u.nome}</td>
+              <td>${u.email}</td>
+              <td>${u.tipo}</td>
+              <td>${u.ebcoins || 0}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <p><small>Total de ${users.length} usuários.</small></p>
+    `;
+  } else area.innerHTML += "<p>Nenhum usuário cadastrado.</p>";
+}
+
+async function criarUsuario() {
+  document.getElementById('msgNovo').textContent = "Criando...";
+  const nome = document.getElementById('nomeNovo').value.trim();
+  const email = document.getElementById('emailNovo').value.trim();
+  const senha = document.getElementById('senhaNova').value.trim();
+  const tipo = document.getElementById('tipoNovo').value;
+
+  if (!nome || !email || !senha) { document.getElementById('msgNovo').textContent = "Preencha todos os campos"; return; }
+
+  try {
+    const res = await fetch("/admin/criarUsuario", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ adminEmail: admin.email, nome, email, senha, tipo })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Erro ao criar usuário");
+    
+    document.getElementById('msgNovo').textContent = data.message;
+    document.getElementById('nomeNovo').value = document.getElementById('emailNovo').value = document.getElementById('senhaNova').value = "";
+    carregarUsuarios(); // atualiza a lista
+  } catch (e) {
+    document.getElementById('msgNovo').textContent = e.message;
+  }
+}
+
+// --- Funções de Perguntas (CRUD) ---
+let perguntasData = [];
+
+async function carregarPerguntasAdmin() {
+  const res = await fetch(`/admin/perguntas?adminEmail=${encodeURIComponent(admin.email)}`);
+  perguntasData = await res.json();
+  renderizarPerguntasAdmin();
+}
+
+function renderizarPerguntasAdmin() {
+  const area = document.getElementById("perguntasAdminArea");
+  area.innerHTML = `<h4>Perguntas Cadastradas:</h4><p><small>Total de ${perguntasData.length} perguntas.</small></p>`;
+  
+  // Formulário para Adicionar/Editar
+  area.innerHTML += `
+    <div style="border:1px solid #ddd; padding:10px; margin-bottom:15px; background:#f9f9f9;">
+      <h5>${perguntasData.editando ? 'Editar Pergunta' : 'Adicionar Nova Pergunta'}</h5>
+      <input id="qTexto" placeholder="Texto da Pergunta" style="width:100%;"><br>
+      <input id="qOpcoes" placeholder="Opções (separadas por vírgula, ex: Op1,Op2,Op3)" style="width:100%;"><br>
+      <input id="qCorreta" placeholder="Resposta Correta (Deve ser uma das opções)" style="width:100%;"><br>
+      <select id="qDificuldade">
+        <option value="facil">Fácil (1 EBcoin)</option>
+        <option value="media">Média (3 EBcoins)</option>
+        <option value="dificil">Difícil (5 EBcoins)</option>
+      </select>
+      <button onclick="salvarPergunta()">${perguntasData.editando ? 'Salvar Edição' : 'Adicionar Pergunta'}</button>
+      ${perguntasData.editando ? `<button onclick="cancelarEdicao()">Cancelar Edição</button>` : ''}
+      <p id="msgPergunta" style="color:blue"></p>
+    </div>
+  `;
+  
+  if (perguntasData.length) {
+    perguntasData.forEach(p => {
+      area.innerHTML += `
+        <div class="pergunta">
+          <b>ID ${p.id} (${p.dificuldade})</b>: ${p.texto}<br>
+          Opções: ${p.opcoes.join(', ')}<br>
+          Correta: <span style="color:green;font-weight:bold;">${p.correta}</span><br>
+          <button onclick="editarPergunta(${p.id})">Editar</button>
+          <button onclick="removerPergunta(${p.id})" style="color:red;">Remover</button>
+        </div>
+      `;
+    });
+  } else area.innerHTML += "<p>Nenhuma pergunta cadastrada.</p>";
+}
+
+function editarPergunta(id) {
+  const q = perguntasData.find(p => p.id === id);
+  if (!q) return;
+  document.getElementById('qTexto').value = q.texto;
+  document.getElementById('qOpcoes').value = q.opcoes.join(',');
+  document.getElementById('qCorreta').value = q.correta;
+  document.getElementById('qDificuldade').value = q.dificuldade;
+  perguntasData.editando = q.id;
+  renderizarPerguntasAdmin();
+}
+
+function cancelarEdicao() {
+  perguntasData.editando = null;
+  document.getElementById('qTexto').value = document.getElementById('qOpcoes').value = document.getElementById('qCorreta').value = "";
+  document.getElementById('qDificuldade').value = "facil";
+  renderizarPerguntasAdmin();
+}
+
+async function salvarPergunta() {
+  document.getElementById('msgPergunta').textContent = "Salvando...";
+  const texto = document.getElementById('qTexto').value.trim();
+  const opcoes = document.getElementById('qOpcoes').value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+  const correta = document.getElementById('qCorreta').value.trim();
+  const dificuldade = document.getElementById('qDificuldade').value;
+
+  if (!texto || opcoes.length < 2 || !correta || !opcoes.includes(correta)) {
+    document.getElementById('msgPergunta').textContent = "Preencha texto, no mínimo 2 opções e a resposta correta (que deve estar nas opções).";
+    return;
+  }
+
+  const payload = { adminEmail: admin.email, texto, opcoes, correta, dificuldade };
+  let res, data;
+  
+  try {
+    if (perguntasData.editando) { // PUT - Atualizar
+      res = await fetch(`/admin/perguntas/${perguntasData.editando}`, {
+        method: "PUT", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+      data = await res.json();
+      perguntasData.editando = null; // Finaliza a edição
+    } else { // POST - Adicionar
+      res = await fetch("/admin/perguntas", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+      data = await res.json();
+    }
+    
+    if (!res.ok) throw new Error(data.message || "Erro ao salvar pergunta");
+    
+    document.getElementById('msgPergunta').textContent = data.message;
+    // Limpa o formulário
+    document.getElementById('qTexto').value = document.getElementById('qOpcoes').value = document.getElementById('qCorreta').value = "";
+    document.getElementById('qDificuldade').value = "facil";
+    carregarPerguntasAdmin(); // Atualiza a lista
+  } catch (e) {
+    document.getElementById('msgPergunta').textContent = e.message;
+  }
+}
+
+async function removerPergunta(id) {
+  if (!confirm(`Tem certeza que deseja remover a pergunta ID ${id}?`)) return;
+  try {
+    const res = await fetch(`/admin/perguntas/${id}?adminEmail=${encodeURIComponent(admin.email)}`, {
+      method: "DELETE"
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Erro ao remover pergunta");
+    alert(data.message);
+    carregarPerguntasAdmin();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+// --- Funções de Reset ---
+async function resetDados() {
+  if (!confirm("🚨 ATENÇÃO: Confirma o RESET MENSAL? Todos os EBcoins e o histórico de respostas serão zerados!")) return;
+  document.getElementById('msgReset').textContent = "Processando reset...";
+  try {
+    const res = await fetch("/admin/reset", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ adminEmail: admin.email })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Erro ao resetar dados");
+    document.getElementById('msgReset').textContent = data.message + " Sucesso!";
+    carregarUsuarios(); // Atualiza ranking após o reset
+  } catch (e) {
+    document.getElementById('msgReset').textContent = e.message;
+  }
+}
+
+// Inicializa
+carregarUsuarios();
+carregarPerguntasAdmin();
+</script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>EB POINT - Acesso Aluno</title>
+ <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+ <div class="container">
+ 
+ <header>
+ <img src="eb_logo.png" alt="Logo EB Educação" class="logo">
+ <h1>Game Point</h1>
+ <p>Olá EBthiano! Acesse o seu desafio diário.</p>
+ </header>
+
+ <main class="auth-form">
+ <h2>Acesso Rápido</h2> 
+  <div id="msg" class="message hidden"></div>
+
+ <form id="loginForm" onsubmit="event.preventDefault(); loginAluno();">
+ <div class="input-group">
+ <label for="email">E-mail EBthiano</label>
+ <input type="email" id="email" name="email" required placeholder="Digite seu e-mail">
+ </div>
+
+ <button type="submit" id="submitBtn">Entrar no Desafio</button>
+ </form>
+            
+ <p class="toggle-text">
+ Sem necessidade de senha! Seu E-mail é sua chave.
+ </p>
+            <p class="toggle-text">
+                <a href="admin-login.html">Acesso Administrativo</a>
+            </p>
+ </main>
+ </div>
+
+<script>
+async function loginAluno() {
+  const msgEl = document.getElementById('msg');
+  msgEl.textContent = "";
+  msgEl.classList.add('hidden');
+  
+  const email = document.getElementById('email').value.trim();
+  const senha = email; // Simula a senha sendo igual ao email (ou vazia, se você alterar o server.js)
+  
+  if (!email) { 
+      msgEl.textContent = "Por favor, digite seu e-mail."; 
+      msgEl.classList.remove('hidden', 'success');
+      msgEl.classList.add('error');
+      return; 
+  }
+
+  try {
+    // IMPORTANTE: Seu server.js ORIGINAL espera email E senha. 
+    // Como você removeu o campo senha, estamos enviando o email no campo senha.
+    // Se o seu backend não exigir senha para alunos, você precisa adaptar o server.js.
+    const res = await fetch("/login", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ email, senha }) // Enviei email nos dois campos para teste
+    });
+    const data = await res.json();
+    
+    if (!res.ok) throw new Error(data.message || "Erro no acesso.");
+    
+    // guarda no localStorage
+    localStorage.setItem("meuquiz_user", JSON.stringify({ email, nome: data.nome, tipo: data.tipo }));
+    
+    // Se for admin, redireciona, mas o link direto está abaixo
+    if (data.tipo === "admin") window.location.href = "admin.html";
+    else window.location.href = "quiz.html";
+    
+  } catch (e) {
+    msgEl.textContent = e.message;
+    msgEl.classList.remove('hidden', 'success');
+    msgEl.classList.add('error');
+  }
+}
+</script>
+</body>
+</html>
