@@ -23,10 +23,11 @@ function readJSON(filePath) {
 function writeJSON(filePath, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
+
+// ** CORREÇÃO FINAL PARA O RENDER/502: FUNÇÃO VAZIA **
+// Isso evita erros de permissão de escrita/criação de arquivos na hospedagem.
 function ensureDataFiles() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
-  if (!fs.existsSync(USERS_FILE)) writeJSON(USERS_FILE, []);
-  if (!fs.existsSync(QUESTIONS_FILE)) writeJSON(QUESTIONS_FILE, []);
+  // Apenas lemos, não criamos forçadamente na inicialização.
 }
 ensureDataFiles();
 
@@ -51,11 +52,9 @@ function isAdminEmail(email) {
 // Health
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
 
-// ---------- LOGIN (aluno) ----------
-// server.js (TRECHO CORRIGIDO)
-// ---------- LOGIN (aluno) ----------
+// ---------- LOGIN (aluno) - CORRIGIDO PARA USAR SÓ EMAIL PARA ALUNOS ----------
 app.post("/login", (req, res) => {
-  const { email, senha } = req.body || {}; // Mantemos 'senha' aqui por convenção, mas não a usaremos para alunos.
+  const { email, senha } = req.body || {};
   const users = readJSON(USERS_FILE);
 
   // 1. Encontra o usuário APENAS pelo email.
@@ -67,13 +66,11 @@ app.post("/login", (req, res) => {
 
   // 2. Se for 'aluno', permite o acesso apenas com o email (login sem senha).
   if (user.tipo === "aluno") {
-      // Login bem-sucedido para o aluno
       return res.json({ success: true, nome: user.nome, tipo: user.tipo, email: user.email, ebcoins: user.ebcoins || 0 });
   } 
   
   // 3. Se for 'admin', verifica a senha (mantendo a segurança para admins).
   if (user.tipo === "admin" && user.senha === senha) {
-      // Se um admin tentar logar na tela de aluno, ele pode ir para o painel de admin
       return res.json({ success: true, nome: user.nome, tipo: user.tipo, email: user.email, ebcoins: user.ebcoins || 0 });
   }
   
